@@ -358,7 +358,7 @@ class Project1Test(unittest.TestCase):
                        "on the current game board."))
 
     @timeout(5)
-    @unittest.skip("Skip minimax test.")  # Uncomment this line to skip test
+    # @unittest.skip("Skip minimax test.")  # Uncomment this line to skip test
     def test_minimax(self):
         """ Test CustomPlayer.minimax
 
