@@ -25,6 +25,8 @@ from multiprocessing import TimeoutError
 from queue import Empty as QueueEmptyError
 from importlib import reload
 
+from logger import trace
+
 WRONG_MOVE = """
 The {} function failed because it returned a non-optimal move at search depth {}.
 Valid choices: {}
@@ -401,6 +403,7 @@ class Project1Test(unittest.TestCase):
         # evaluation function.
         for idx in range(5):
             test_depth = idx + 1
+            trace("test_depth %d: start." % test_depth)
             agentUT, board = self.initAUT(test_depth, heuristic,
                                           iterative_search, method,
                                           loc1=starting_location,
@@ -421,6 +424,7 @@ class Project1Test(unittest.TestCase):
 
             self.assertIn(move, expected_moves[idx // 2], WRONG_MOVE.format(
                 method, test_depth, expected_moves[idx // 2], move))
+            trace("test_depth %d: done." % test_depth)
 
     @timeout(20)
     # @unittest.skip("Skip alpha-beta test.")  # Uncomment this line to skip test
