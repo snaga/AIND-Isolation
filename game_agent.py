@@ -8,6 +8,7 @@ relative strength using tournament.py and include the results in your report.
 """
 import random
 
+from logger import trace
 
 class Timeout(Exception):
     """Subclass base exception for code clarity."""
@@ -172,18 +173,23 @@ class CustomPlayer:
         if self.time_left() < self.TIMER_THRESHOLD:
             raise Timeout()
 
+        p = '[%d]' % depth
+        trace(p + "depth = %d, max player = %s" % (depth, maximizing_player))
         if depth <= 0:
-            return self.score(game, game.active_player), (-1,-1)
+            trace(p + "stop: score active = %f, inactive = %f" % (self.score(game, game.active_player), self.score(game, game.inactive_player)))
+            return self.score(game, game.active_player if maximizing_player else game.inactive_player), (-1,-1)
 
         legal_moves = game.get_legal_moves()
         if len(legal_moves) == 0:
             return -1 if maximizing_player else 1, (-1, -1)
+        trace(p + 'legal_moves: %s' % legal_moves)
 
         _score = None
         _best_move = None
         for next_move in legal_moves:
+            trace(p + "next_move: %s" % str(next_move))
             next_state = game.forecast_move(next_move)
-            (s,m) = self.minimax(next_state, depth-1)
+            (s,m) = self.minimax(next_state, depth-1, False if maximizing_player else True)
             if _score is None:
                 _score = s
                 _best_move = next_move
@@ -191,7 +197,7 @@ class CustomPlayer:
             if (maximizing_player and s > _score) or (not maximizing_player and s < _score):
                 _score = s
                 _best_move = next_move
-
+        trace(p + 'best move %s score %f' % (str(_best_move), _score))
         return _score, _best_move
 
     def alphabeta(self, game, depth, alpha=float("-inf"), beta=float("inf"), maximizing_player=True):
