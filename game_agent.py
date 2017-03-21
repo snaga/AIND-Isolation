@@ -172,8 +172,27 @@ class CustomPlayer:
         if self.time_left() < self.TIMER_THRESHOLD:
             raise Timeout()
 
-        # TODO: finish this function!
-        raise NotImplementedError
+        if depth <= 0:
+            return self.score(game, game.active_player), (-1,-1)
+
+        legal_moves = game.get_legal_moves()
+        if len(legal_moves) == 0:
+            return -1 if maximizing_player else 1, (-1, -1)
+
+        _score = None
+        _best_move = None
+        for next_move in legal_moves:
+            next_state = game.forecast_move(next_move)
+            (s,m) = self.minimax(next_state, depth-1)
+            if _score is None:
+                _score = s
+                _best_move = next_move
+                continue
+            if (maximizing_player and s > _score) or (not maximizing_player and s < _score):
+                _score = s
+                _best_move = next_move
+
+        return _score, _best_move
 
     def alphabeta(self, game, depth, alpha=float("-inf"), beta=float("inf"), maximizing_player=True):
         """Implement minimax search with alpha-beta pruning as described in the
