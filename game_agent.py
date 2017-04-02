@@ -175,17 +175,33 @@ class CustomPlayer:
 
         p = '[%d]' % depth
         trace(p + "depth = %d, max player = %s" % (depth, maximizing_player))
+        """
+        探索する最下層に到達した場合、
+        maximizing層ならアクティブなプレイヤー（自分）のスコアを、
+        minimizing層なら非アクティブなプレイヤー（自分）のスコアを計算して返す
+        """
         if depth <= 0:
             trace(p + "stop: score active = %f, inactive = %f" % (self.score(game, game.active_player), self.score(game, game.inactive_player)))
             return self.score(game, game.active_player if maximizing_player else game.inactive_player), (-1,-1)
 
         legal_moves = game.get_legal_moves()
+        """
+        打てる手が無くなった時、maximizing層なら-1（負け）を、
+        minimizing層なら1（勝ち）を返す
+        """
         if len(legal_moves) == 0:
             return -1 if maximizing_player else 1, (-1, -1)
         trace(p + 'legal_moves: %s' % legal_moves)
 
         _score = None
         _best_move = None
+        """
+        打てる手の中から一つを選んで、先に進めて、再帰的にminimaxを実行する。
+        maximizing層で、かつ、それまでの打ち手よりもスコアが高かったら、
+        その打ち手を best move とする。
+        minimizing層で、かつ、それまでの打ち手よりもスコアが低かったら、
+        その打ち手を best move とする。
+        """
         for next_move in legal_moves:
             trace(p + "next_move: %s" % str(next_move))
             next_state = game.forecast_move(next_move)
@@ -241,5 +257,81 @@ class CustomPlayer:
         if self.time_left() < self.TIMER_THRESHOLD:
             raise Timeout()
 
-        # TODO: finish this function!
-        raise NotImplementedError
+        maxdepth = 2
+        p = '[%d:%s] %s' % (depth, 'max' if maximizing_player else 'min', ''.join(['  ' for x in range(0,maxdepth-depth)]))
+        """
+        探索する最下層に到達した場合、
+        maximizing層ならアクティブなプレイヤー（自分）のスコアを、
+        minimizing層なら非アクティブなプレイヤー（自分）のスコアを計算して返す
+        """
+        if depth <= 0:
+            trace(p + "stop by depth: score active = %f, inactive = %f" % (self.score(game, game.active_player), self.score(game, game.inactive_player)))
+            return self.score(game, game.active_player if maximizing_player else game.inactive_player), (-1,-1)
+
+        legal_moves = game.get_legal_moves()
+        """
+        打てる手が無くなった時、maximizing層なら-1（負け）を、
+        minimizing層なら1（勝ち）を返す
+        """
+        if len(legal_moves) == 0:
+            trace(p + "stop by no legal moves")
+            return -1 if maximizing_player else 1, (-1, -1)
+        trace(p + 'legal_moves: %s' % legal_moves)
+
+        best_score = None
+        best_move = None
+        """
+        打てる手の中から一つを選んで、先に進めて、再帰的にalphabetaを実行する。
+        maximizing層で、かつ、それまでの打ち手よりもスコアが高かったら、
+        その打ち手を best move とする。
+        minimizing層で、かつ、それまでの打ち手よりもスコアが低かったら、
+        その打ち手を best move とする。
+        """
+        for next_move in legal_moves:
+            trace(p + "next_move: %s" % str(next_move))
+            next_state = game.forecast_move(next_move)
+            (s, m) = self.alphabeta(next_state, depth-1, alpha, beta, not maximizing_player)
+            trace(p + "alphabeta: score %f move %s alpha %f beta %f" % (s, m, alpha, beta))
+            if (not best_score or
+                    (maximizing_player and s > best_score) or
+                    (not maximizing_player and s < best_score)):
+                best_score = s
+                best_move = next_move
+                trace(p + "updating: best score %f best move %s" % (best_score, best_move))
+
+            """
+            maximizing層の場合、下のノードから戻ってきたスコアをalphaとする
+            minimizing層の場合、下のノードから戻ってきたスコアをbetaとする
+            """
+            if maximizing_player:
+                alpha = s
+            else:
+                beta = s
+
+            """
+            maximizing層の場合、それまでの best score が beta より大きかったら
+            残りのノードを pruning する
+            """
+            if maximizing_player and (best_score >= beta):
+                trace(p + "pruning by beta")
+                return beta, best_move
+            """
+            minimizing層の場合、それまでの best score が alpha より小さかったら
+            残りのノードを pruning する
+            """
+            if not maximizing_player and best_score <= alpha:
+                trace(p + "pruning by alpha")
+                return alpha, best_move
+        trace(p + 'best move %s score %f' % (str(best_move), best_score))
+
+        """
+        alpha/betaが初期値の場合、best score を設定する
+        """
+        if maximizing_player and beta == float('inf'):
+            trace(p + "updating beta: %f -> %f" % (beta, best_score))
+            beta = best_score
+        if not maximizing_player and alpha == float('-inf'):
+            trace(p + "updating alpha: %f -> %f" % (alpha, best_score))
+            alpha = best_score
+
+        return best_score, best_move
