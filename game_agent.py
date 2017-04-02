@@ -117,29 +117,63 @@ class CustomPlayer:
             (-1, -1) if there are no available legal moves.
         """
 
+        print("\niterative: %s" % self.iterative)
+        print("method: %s" % self.method)
+        print("search depth: %d" % self.search_depth)
+        print("game: \n%s" % game.to_string())
+        print("game.counts: %s" % str(game.counts))
+        print("legal_moves: %s" % legal_moves)
+        print("time_left: %s" % time_left())
+
         self.time_left = time_left
 
         # TODO: finish this function!
+        best_move = None
+        best_score = None
 
         # Perform any required initializations, including selecting an initial
         # move from the game board (i.e., an opening book), or returning
-        # immediately if there are no legal moves
-
+        # immediately if there are no legal moves   
+        if len(legal_moves) == 0:
+            return (-1,-1)
         try:
             # The search method call (alpha beta or minimax) should happen in
             # here in order to avoid timeout. The try/except block will
             # automatically catch the exception raised by the search method
             # when the timer gets close to expiring
-            pass
+            if self.iterative:
+                depths = list(range(1, 5))
+            else:
+                depths = [self.search_depth]
+            print("depths: %s" % depths)
+            for depth in depths:
+                print("depth %d: start" % depth)
+                print("time_left: %s" % time_left())
+                for next_move in legal_moves:
+                    print("next_move: %s" % str(next_move))
+                    if self.method == 'minimax':
+                        (s, m) = self.minimax(game, depth, maxdepth=depth)
+                    else:
+                        raise NotImplementedError
+                    print("score: %s" % s)
+                    if not best_score or s > best_score:
+                        best_score = s
+                        best_move = next_move
+                print("depth %d: end" % depth)
+                print("time_left: %s" % time_left())
+                print("best move %s best score %f" % (best_move, best_score))
 
         except Timeout:
             # Handle any actions required at timeout, if necessary
-            pass
+            print("get_move: timeout reached.")
+            return best_move
+            #raise NotImplementedError
 
+        print("game.counts: %s" % str(game.counts))
         # Return the best move from the last completed search iteration
-        raise NotImplementedError
+        return best_move
 
-    def minimax(self, game, depth, maximizing_player=True):
+    def minimax(self, game, depth, maximizing_player=True, maxdepth=2):
         """Implement the minimax search algorithm as described in the lectures.
 
         Parameters
@@ -173,7 +207,7 @@ class CustomPlayer:
         if self.time_left() < self.TIMER_THRESHOLD:
             raise Timeout()
 
-        p = '[%d]' % depth
+        p = '[%d:%s] %s' % (depth, 'max' if maximizing_player else 'min', ''.join(['  ' for x in range(0,maxdepth-depth)]))
         trace(p + "depth = %d, max player = %s" % (depth, maximizing_player))
         """
         探索する最下層に到達した場合、
@@ -181,8 +215,9 @@ class CustomPlayer:
         minimizing層なら非アクティブなプレイヤー（自分）のスコアを計算して返す
         """
         if depth <= 0:
-            trace(p + "stop: score active = %f, inactive = %f" % (self.score(game, game.active_player), self.score(game, game.inactive_player)))
-            return self.score(game, game.active_player if maximizing_player else game.inactive_player), (-1,-1)
+            score = self.score(game, game.active_player if maximizing_player else game.inactive_player)
+#            trace(p + "stop: score active = %f, inactive = %f" % (self.score(game, game.active_player), self.score(game, game.inactive_player)))
+            return score, (-1,-1)
 
         legal_moves = game.get_legal_moves()
         """
@@ -214,6 +249,7 @@ class CustomPlayer:
                 _score = s
                 _best_move = next_move
         trace(p + 'best move %s score %f' % (str(_best_move), _score))
+        trace(p + "game.counts: %s" % str(game.counts))
         return _score, _best_move
 
     def alphabeta(self, game, depth, alpha=float("-inf"), beta=float("inf"), maximizing_player=True):

@@ -1,4 +1,4 @@
-trace_enabled = False
+trace_enabled = True
 
 def trace(s):
     if trace_enabled:
